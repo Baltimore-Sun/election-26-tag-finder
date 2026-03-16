@@ -16,6 +16,23 @@ body {
   color: #1d2327;
 }
 
+/* ── Admin bar ── */
+.adminbar {
+  background: #1d2327;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 400;
+}
+.adminbar-wp { color: #a7aaad; font-size: 18px; line-height: 1; }
+.adminbar-divider { color: #3c434a; }
+.adminbar-site { color: #a7aaad; font-size: 13px; font-weight: 400; text-decoration: none; }
+.adminbar-site:hover { color: #fff; }
+.adminbar-right { margin-left: auto; color: #787c82; font-size: 12px; }
 
 /* ── Page title area ── */
 .page-wrap { padding: 8px 20px 0; }
@@ -335,6 +352,13 @@ body {
 </head>
 <body>
 
+<!-- WP Admin bar -->
+<div class="adminbar">
+  <span class="adminbar-wp">⊞</span>
+  <span class="adminbar-divider">|</span>
+  <a class="adminbar-site" href="#">Baltimore Sun</a>
+  <span class="adminbar-right">Election Tag Finder</span>
+</div>
 
 <!-- Page title -->
 <div class="page-wrap">
@@ -452,7 +476,7 @@ const races = [
   { level:"state", ballot:"circuits",   jurisdiction:"Baltimore County", office:"Judge of the Circuit Court Circuit 3 - Baltimore County", tags:["Baltimore County 2026 elections"] },
   // LOCAL: Carroll County
   { level:"local", ballot:"districts",  jurisdiction:"Carroll County", office:"Board of Commissioners", tags:["Carroll County 2026 Board of Commissioners races","Carroll County 2026 elections"] },
-  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Board of Education",    tags:["Carroll County Board of Education races","Carroll County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Board of Education",    tags:["Carroll County 2026 Board of Education races","Carroll County 2026 elections"] },
   { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Clerk of the Circuit Court", tags:["Carroll County 2026 elections"] },
   { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Judge of the Orphans' Court", tags:["Carroll County 2026 elections"] },
   { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Register of Wills",     tags:["Carroll County 2026 elections"] },
@@ -486,7 +510,7 @@ const races = [
   { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"Sheriff",              tags:["Wicomico County 2026 elections"] },
   { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"State's Attorney",     tags:["Wicomico County 2026 elections"] },
   // LOCAL: Worcester County
-  { level:"local", ballot:"districts",  jurisdiction:"Worcester County", office:"Board of Commissioners", tags:["Worcester County Board of Commissioners races","Worcester County 2026 elections"] },
+  { level:"local", ballot:"districts",  jurisdiction:"Worcester County", office:"Board of Commissioners",     tags:["Worcester County 2026 Board of Commissioners races","Worcester County 2026 elections"] },
   { level:"local", ballot:"districts",  jurisdiction:"Worcester County", office:"Board of Education",  tags:["Worcester County 2026 elections"] },
   { level:"local", ballot:"countywide", jurisdiction:"Worcester County", office:"Clerk of the Circuit Court", tags:["Worcester County 2026 elections"] },
   { level:"local", ballot:"countywide", jurisdiction:"Worcester County", office:"Judge of the Orphans' Court", tags:["Worcester County 2026 elections"] },
