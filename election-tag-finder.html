@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Election Tag Finder</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #f0f0f1;
+  color: #1d2327;
+}
+
+
+/* ── Page title area ── */
+.page-wrap { padding: 8px 20px 0; }
+.page-title { font-size: 23px; font-weight: 400; color: #1d2327; margin-bottom: 2px; line-height: 1.3; }
+.page-desc { color: #787c82; font-size: 13px; }
+
+/* ── Main content ── */
+.content { padding: 16px 20px 220px; max-width: 960px; }
+
+/* ── WP card ── */
+.card {
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 3px;
+  box-shadow: 0 1px 1px rgba(0,0,0,.04);
+  margin-bottom: 16px;
+}
+.card-head {
+  background: #f6f7f7;
+  border-bottom: 1px solid #c3c4c7;
+  border-radius: 3px 3px 0 0;
+  padding: 7px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.card-head h2 {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: #50575e;
+}
+.card-body { padding: 12px 14px; }
+
+/* ── Search ── */
+.search-wrap { position: relative; }
+#search-input {
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: #1d2327;
+  background: #fff;
+  border: 1px solid #8c8f94;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.07);
+  outline: none;
+  transition: border-color .1s, box-shadow .1s;
+}
+#search-input:focus {
+  border-color: #2271b1;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.07), 0 0 0 1px #2271b1;
+}
+#search-input::placeholder { color: #8c8f94; }
+#ac-list {
+  list-style: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0; right: 0;
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 3px;
+  max-height: 260px;
+  overflow-y: auto;
+  z-index: 200;
+  box-shadow: 0 3px 8px rgba(0,0,0,.12);
+}
+.ac-item {
+  padding: 7px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  border-bottom: 1px solid #f6f7f7;
+  color: #1d2327;
+}
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.active { background: #f0f6fc; color: #135e96; }
+
+/* ── Filter rows ── */
+.fg {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px solid #f6f7f7;
+}
+.fg:first-child { padding-top: 0; }
+.fg:last-child { border-bottom: none; padding-bottom: 0; }
+.fl {
+  width: 82px;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #50575e;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  padding-top: 3px;
+}
+.fbtns { display: flex; flex-wrap: wrap; gap: 4px; flex: 1; }
+.fbtn {
+  padding: 2px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  border: 1px solid #c3c4c7;
+  border-radius: 3px;
+  background: #f6f7f7;
+  color: #50575e;
+  cursor: pointer;
+  line-height: 1.8;
+  transition: all .08s;
+}
+.fbtn:hover { background: #fff; border-color: #2271b1; color: #2271b1; }
+.fbtn.on { background: #2271b1; color: #fff; border-color: #135e96; }
+.fbtn.on:hover { background: #135e96; }
+.fbtn.dim { opacity: .28; pointer-events: none; }
+.fbtn.fav { background: #fef8cd; border-color: #b8860b; color: #704f00; }
+.fbtn.fav:hover { background: #fef3aa; }
+.fbtn.fav.on { background: #996800; color: #fff; border-color: #704f00; }
+.fbtn.clr { background: #fcf0f1; border-color: #d63638; color: #d63638; }
+.fbtn.clr:hover { background: #fce8e8; }
+
+/* ── Race count ── */
+.race-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: #787c82;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  margin-bottom: 6px;
+  padding: 0 2px;
+}
+
+/* ── Race list ── */
+#race-list {
+  background: #fff;
+  border: 1px solid #c3c4c7;
+  border-radius: 3px;
+  box-shadow: 0 1px 1px rgba(0,0,0,.04);
+  overflow: hidden;
+  max-height: 460px;
+  overflow-y: auto;
+}
+#race-list::-webkit-scrollbar { width: 6px; }
+#race-list::-webkit-scrollbar-thumb { background: #c3c4c7; }
+.ri {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f6f7f7;
+}
+.ri:last-child { border-bottom: none; }
+.ri:hover { background: #f0f6fc; }
+.ri.clipped { background: #edfaef; }
+.ri.clipped:hover { background: #d9f5dd; }
+.ri-name { flex: 1; font-size: 13px; font-weight: 400; color: #1d2327; }
+.ri-meta {
+  font-size: 11px;
+  color: #787c82;
+  white-space: nowrap;
+  background: #f0f0f1;
+  border: 1px solid #dcdcde;
+  border-radius: 2px;
+  padding: 1px 6px;
+}
+.add-btn {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid #2271b1;
+  border-radius: 3px;
+  color: #2271b1;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .08s;
+}
+.add-btn:hover { background: #f0f6fc; }
+.add-btn.added { background: #00a32a; color: #fff; border-color: #007017; }
+.add-btn.added:hover { background: #007017; }
+.qc-btn {
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid #6741d9;
+  border-radius: 3px;
+  color: #6741d9;
+  background: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .08s;
+}
+.qc-btn:hover { background: #f3f0fd; }
+.qc-btn.ok { background: #6741d9; color: #fff; }
+.star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #c3c4c7;
+  padding: 1px 3px;
+  transition: color .1s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.star:hover { color: #b8860b; }
+.star.on { color: #b8860b; }
+.empty { padding: 32px; text-align: center; color: #787c82; font-size: 13px; }
+
+/* ── Clipboard panel ── */
+#clip-panel {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 300;
+  background: #23282d;
+  border-top: 3px solid #2271b1;
+  box-shadow: 0 -2px 10px rgba(0,0,0,.3);
+}
+.clip-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 20px;
+  cursor: pointer;
+  max-width: 960px;
+  margin: 0 auto;
+  user-select: none;
+}
+.clip-bar:hover { background: rgba(255,255,255,.03); }
+.clip-bar-left { display: flex; align-items: center; gap: 8px; }
+.clip-bar-icon { font-size: 14px; }
+.clip-bar-title { color: #f0f0f1; font-size: 13px; font-weight: 600; }
+.clip-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #3c434a;
+  color: #a7aaad;
+  border-radius: 2px;
+  padding: 1px 7px;
+}
+.clip-badge.has { background: #00a32a; color: #fff; }
+.clip-caret { font-size: 11px; color: #787c82; }
+.clip-body {
+  display: none;
+  padding: 12px 20px 16px;
+  max-width: 960px;
+  margin: 0 auto;
+  border-top: 1px solid #3c434a;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.clip-empty { color: #787c82; font-size: 12px; font-style: italic; }
+.clip-race-row {
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+  border-bottom: 1px solid #2c3338;
+}
+.clip-race-row:last-child { border-bottom: none; }
+.clip-race-name { flex: 1; font-size: 12px; color: #c3c4c7; }
+.clip-rm {
+  background: none; border: none;
+  color: #787c82; cursor: pointer;
+  font-size: 14px; padding: 0 4px; line-height: 1;
+}
+.clip-rm:hover { color: #f86368; }
+.clip-tags-section { margin: 10px 0 6px; }
+.clip-tags-label { font-size: 11px; color: #787c82; margin-bottom: 4px; }
+.clip-tags-box {
+  background: #1d2327;
+  border: 1px solid #3c434a;
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-family: Consolas, "SFMono-Regular", monospace;
+  color: #72aee6;
+  word-break: break-word;
+  line-height: 1.7;
+  cursor: pointer;
+  transition: border-color .1s;
+}
+.clip-tags-box:hover { border-color: #2271b1; }
+.clip-tags-box.ok { border-color: #00a32a; color: #68de7c; }
+.clip-wp-note { font-size: 11px; color: #787c82; margin: 8px 0 6px; }
+.clip-actions { display: flex; gap: 8px; }
+.btn-copy-all {
+  flex: 1;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  background: #2271b1;
+  color: #fff;
+  border: 1px solid #135e96;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .08s;
+}
+.btn-copy-all:hover:not(:disabled) { background: #135e96; }
+.btn-copy-all.ok { background: #00a32a !important; border-color: #007017 !important; }
+.btn-copy-all:disabled { background: #3c434a; border-color: #3c434a; color: #787c82; cursor: default; }
+.btn-clear {
+  padding: 7px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  background: transparent;
+  color: #f86368;
+  border: 1px solid #4c3637;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all .08s;
+}
+.btn-clear:hover { background: rgba(248,99,104,.1); border-color: #f86368; }
+</style>
+</head>
+<body>
+
+
+<!-- Page title -->
+<div class="page-wrap">
+  <h1 class="page-title">🗳️ Election Tag Finder</h1>
+  <p class="page-desc">Search or filter for races.<br> &#x1F449; Use "Quick Copy" if your story is about a single race.<br>&#x1F449 If your story concerns multiple races, "Add" races to clipboard then "Copy all tags" from Tag Clipboard.</p>
+</div>
+
+<div class="content">
+
+  <!-- Search card -->
+  <div class="card">
+    <div class="card-head"><h2>Search</h2></div>
+    <div class="card-body">
+      <div class="search-wrap">
+        <input id="search-input" type="text" placeholder="Search by race name, jurisdiction, or office…" autocomplete="off">
+        <ul id="ac-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters card -->
+  <div class="card">
+    <div class="card-head"><h2>Filters</h2></div>
+    <div class="card-body">
+      <div class="fg">
+        <div class="fl">Quick</div>
+        <div class="fbtns">
+          <button class="fbtn fav" id="fav-btn" onclick="toggleFavFilter()">⭐ Favorites</button>
+          <button class="fbtn clr" onclick="clearAll()">✕ Clear all</button>
+        </div>
+      </div>
+      <div class="fg"><div class="fl">Level</div><div class="fbtns" id="fl-level"></div></div>
+      <div class="fg"><div class="fl">Ballot</div><div class="fbtns" id="fl-ballot"></div></div>
+      <div class="fg"><div class="fl">Jurisdiction</div><div class="fbtns" id="fl-jurisdiction"></div></div>
+      <div class="fg"><div class="fl">Office</div><div class="fbtns" id="fl-office"></div></div>
+    </div>
+  </div>
+
+  <div class="race-count" id="list-ct"></div>
+  <div id="race-list"></div>
+</div>
+
+<!-- Tag Clipboard -->
+<div id="clip-panel">
+  <div class="clip-bar" onclick="togglePanel()">
+    <div class="clip-bar-left">
+      <span class="clip-bar-icon">📋</span>
+      <span class="clip-bar-title">Tag Clipboard</span>
+      <span class="clip-badge" id="clip-badge">0</span>
+    </div>
+    <span class="clip-caret" id="clip-caret">▲ expand</span>
+  </div>
+  <div class="clip-body" id="clip-body">
+    <div class="clip-empty" id="clip-empty">No races added yet — use the <strong style="color:#a7aaad">+ Add</strong> buttons above.</div>
+    <div id="clip-races"></div>
+    <div id="clip-tags-section" style="display:none">
+      <div class="clip-tags-section">
+        <div class="clip-tags-label">Click to copy tag string:</div>
+        <div class="clip-tags-box" id="clip-tags-box" onclick="copyTags()"></div>
+      </div>
+      <div class="clip-wp-note">Copy and paste into the Tags field for your story in WordPress.</div>
+      <div class="clip-actions">
+        <button class="btn-copy-all" id="btn-copy-all" onclick="copyTags()">Copy all tags</button>
+        <button class="btn-clear" onclick="clearClipboard()">Clear clipboard</button>
+      </div>
+    </div>
+    <div id="clip-tags-empty-actions" style="display:none">
+      <div class="clip-wp-note">Copy and paste into the Tags field for your story in WordPress.</div>
+      <div class="clip-actions">
+        <button class="btn-copy-all" disabled>Copy all tags</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── helpers ───────────────────────────────────────────────────────────────────
+function officeGroup(r) {
+  if (r.level === 'General Assembly') {
+    if (r.office.startsWith('State Senate'))       return 'State Senate';
+    if (r.office.startsWith('House of Delegates')) return 'House of Delegates';
+  }
+  if (r.level === 'federal') return 'U.S. Congress';
+  return r.office;
+}
+
+// ── data ──────────────────────────────────────────────────────────────────────
+const races = [
+  // LOCAL: Anne Arundel County
+  { level:"local", ballot:"districts",  jurisdiction:"Anne Arundel County", office:"County Council",                          tags:["Anne Arundel County 2026 County Council races","Anne Arundel County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Anne Arundel County", office:"County Executive",                        tags:["Anne Arundel County 2026 county executive race","Anne Arundel County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Anne Arundel County", office:"State's Attorney",                        tags:["Anne Arundel County 2026 state's attorney's race","Anne Arundel County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Anne Arundel County", office:"Clerk of the Circuit Court",              tags:["Anne Arundel County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Anne Arundel County", office:"Judge of the Orphans' Court",             tags:["Anne Arundel County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Anne Arundel County", office:"Register of Wills",                       tags:["Anne Arundel County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Anne Arundel County", office:"Sheriff",                                 tags:["Anne Arundel County 2026 elections"] },
+  { level:"state", ballot:"circuits",   jurisdiction:"Anne Arundel County", office:"Judge of the Circuit Court Circuit 5 - Anne Arundel", tags:["Anne Arundel County 2026 elections"] },
+  // LOCAL: Baltimore City
+  { level:"local", ballot:"citywide",   jurisdiction:"Baltimore City", office:"Sheriff",              tags:["Baltimore City 2026 sheriff's race","Baltimore City 2026 elections"] },
+  { level:"local", ballot:"citywide",   jurisdiction:"Baltimore City", office:"State's Attorney",     tags:["Baltimore City 2026 state's attorney's race","Baltimore City 2026 elections"] },
+  { level:"local", ballot:"citywide",   jurisdiction:"Baltimore City", office:"Board of Education",   tags:["Baltimore City 2026 elections"] },
+  { level:"local", ballot:"citywide",   jurisdiction:"Baltimore City", office:"Clerk of the Circuit Court", tags:["Baltimore City 2026 elections"] },
+  { level:"local", ballot:"citywide",   jurisdiction:"Baltimore City", office:"Judge of the Orphans' Court", tags:["Baltimore City 2026 elections"] },
+  { level:"local", ballot:"citywide",   jurisdiction:"Baltimore City", office:"Register of Wills",    tags:["Baltimore City 2026 elections"] },
+  { level:"state", ballot:"circuits",   jurisdiction:"Baltimore City", office:"Judge of the Circuit Court Circuit 8 - Baltimore City", tags:["Baltimore City 2026 elections"] },
+  // LOCAL: Baltimore County
+  { level:"local", ballot:"districts",  jurisdiction:"Baltimore County", office:"Board of Education",  tags:["Baltimore County 2026 Board of Education races","Baltimore County 2026 elections"] },
+  { level:"local", ballot:"districts",  jurisdiction:"Baltimore County", office:"County Council",      tags:["Baltimore County 2026 County Council races","Baltimore County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Baltimore County", office:"County Executive",    tags:["Baltimore County 2026 county executive race","Baltimore County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Baltimore County", office:"State's Attorney",    tags:["Baltimore County 2026 state's attorney's race","Baltimore County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Baltimore County", office:"Clerk of the Circuit Court", tags:["Baltimore County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Baltimore County", office:"Judge of the Orphans' Court", tags:["Baltimore County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Baltimore County", office:"Register of Wills",   tags:["Baltimore County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Baltimore County", office:"Sheriff",             tags:["Baltimore County 2026 elections"] },
+  { level:"state", ballot:"circuits",   jurisdiction:"Baltimore County", office:"Judge of the Circuit Court Circuit 3 - Baltimore County", tags:["Baltimore County 2026 elections"] },
+  // LOCAL: Carroll County
+  { level:"local", ballot:"districts",  jurisdiction:"Carroll County", office:"Board of Commissioners", tags:["Carroll County 2026 Board of Commissioners races","Carroll County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Board of Education",    tags:["Carroll County Board of Education races","Carroll County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Clerk of the Circuit Court", tags:["Carroll County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Judge of the Orphans' Court", tags:["Carroll County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Register of Wills",     tags:["Carroll County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"Sheriff",               tags:["Carroll County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Carroll County", office:"State's Attorney",      tags:["Carroll County 2026 elections"] },
+  // LOCAL: Harford County
+  { level:"local", ballot:"districts",  jurisdiction:"Harford County", office:"Board of Education",    tags:["Harford County 2026 school board races","Harford County 2026 elections"] },
+  { level:"local", ballot:"districts",  jurisdiction:"Harford County", office:"County Council",        tags:["Harford County 2026 county council races","Harford County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Harford County", office:"County Council President", tags:["Harford County 2026 county council races","Harford County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Harford County", office:"County Executive",      tags:["Harford County 2026 county executive race","Harford County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Harford County", office:"Clerk of the Circuit Court", tags:["Harford County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Harford County", office:"Register of Wills",     tags:["Harford County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Harford County", office:"Sheriff",               tags:["Harford County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Harford County", office:"State's Attorney",      tags:["Harford County 2026 elections"] },
+  // LOCAL: Howard County
+  { level:"local", ballot:"countywide", jurisdiction:"Howard County", office:"Board of Education",     tags:["Howard County 2026 school board races","Howard County 2026 elections"] },
+  { level:"local", ballot:"districts",  jurisdiction:"Howard County", office:"County Council",         tags:["Howard County 2026 County Council races","Howard County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Howard County", office:"County Executive",       tags:["Howard County 2026 county executive race","Howard County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Howard County", office:"Clerk of the Circuit Court", tags:["Howard County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Howard County", office:"Register of Wills",      tags:["Howard County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Howard County", office:"Sheriff",                tags:["Howard County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Howard County", office:"State's Attorney",       tags:["Howard County 2026 elections"] },
+  { level:"state", ballot:"circuits",   jurisdiction:"Howard County", office:"Judge of the Circuit Court Circuit 5 - Howard", tags:["Howard County 2026 elections"] },
+  // LOCAL: Wicomico County
+  { level:"local", ballot:"districts",  jurisdiction:"Wicomico County", office:"Board of Education",   tags:["Wicomico County 2026 elections"] },
+  { level:"local", ballot:"districts",  jurisdiction:"Wicomico County", office:"County Council",       tags:["Wicomico County 2026 County Council races","Wicomico County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"County Executive",     tags:["Wicomico County 2026 county executive race","Wicomico County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"Clerk of the Circuit Court", tags:["Wicomico County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"Judge of the Orphans' Court", tags:["Wicomico County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"Register of Wills",    tags:["Wicomico County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"Sheriff",              tags:["Wicomico County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Wicomico County", office:"State's Attorney",     tags:["Wicomico County 2026 elections"] },
+  // LOCAL: Worcester County
+  { level:"local", ballot:"districts",  jurisdiction:"Worcester County", office:"Board of Commissioners", tags:["Worcester County Board of Commissioners races","Worcester County 2026 elections"] },
+  { level:"local", ballot:"districts",  jurisdiction:"Worcester County", office:"Board of Education",  tags:["Worcester County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Worcester County", office:"Clerk of the Circuit Court", tags:["Worcester County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Worcester County", office:"Judge of the Orphans' Court", tags:["Worcester County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Worcester County", office:"Register of Wills",   tags:["Worcester County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Worcester County", office:"Sheriff",             tags:["Worcester County 2026 elections"] },
+  { level:"local", ballot:"countywide", jurisdiction:"Worcester County", office:"State's Attorney",    tags:["Worcester County 2026 elections"] },
+  { level:"state", ballot:"circuits",   jurisdiction:"Worcester County", office:"Judge of the Circuit Court Circuit 1 - Worcester", tags:["Worcester County 2026 elections"] },
+  // STATE
+  { level:"state", ballot:"statewide", jurisdiction:"Maryland", office:"Governor/Lt. Governor", tags:["Maryland 2026 governor's race","Maryland 2026 elections"] },
+  { level:"state", ballot:"statewide", jurisdiction:"Maryland", office:"Attorney General",      tags:["Maryland 2026 elections"] },
+  { level:"state", ballot:"statewide", jurisdiction:"Maryland", office:"Comptroller",           tags:["Maryland 2026 elections"] },
+  // FEDERAL
+  { level:"federal", ballot:"districts", jurisdiction:"Baltimore County, Howard County, Wicomico County, Worcester County", office:"1st Congressional District", tags:["Baltimore County 2026 elections","Howard County 2026 elections","Wicomico County 2026 elections","Worcester County 2026 elections"] },
+  { level:"federal", ballot:"districts", jurisdiction:"Baltimore City, Baltimore County, Carroll County",                   office:"2nd Congressional District", tags:["Baltimore City 2026 elections","Baltimore County 2026 elections","Carroll County 2026 elections"] },
+  { level:"federal", ballot:"districts", jurisdiction:"Anne Arundel County, Carroll County, Howard County",                 office:"3rd Congressional District", tags:["Anne Arundel County 2026 elections","Carroll County 2026 elections","Howard County 2026 elections"] },
+  { level:"federal", ballot:"districts", jurisdiction:"",                                                                   office:"4th Congressional District", tags:[] },
+  { level:"federal", ballot:"districts", jurisdiction:"Anne Arundel County",                                                office:"5th Congressional District", tags:["Anne Arundel County 2026 elections"] },
+  { level:"federal", ballot:"districts", jurisdiction:"",                                                                   office:"6th Congressional District", tags:[] },
+  { level:"federal", ballot:"districts", jurisdiction:"Baltimore City, Baltimore County",                                   office:"7th Congressional District", tags:["Baltimore City 2026 elections","Baltimore County 2026 elections"] },
+  { level:"federal", ballot:"districts", jurisdiction:"",                                                                   office:"8th Congressional District", tags:[] },
+  // GENERAL ASSEMBLY: State Senate
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 1",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 2",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 3",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 4",  tags:["Carroll County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 5",  tags:["Carroll County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 6",  tags:["Baltimore County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 7",  tags:["Baltimore County 2026 elections","Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 8",  tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 9",  tags:["Carroll County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 10", tags:["Baltimore County 2026 elections","Carroll County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 11", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 12", tags:["Anne Arundel County 2026 elections","Baltimore County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 13", tags:["Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 14", tags:["Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 15", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 16", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 17", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 18", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 19", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 20", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 21", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 22", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 23", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 24", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 25", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 26", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 27", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 28", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 29", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 30", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 31", tags:["Anne Arundel County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 32", tags:["Anne Arundel County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 33", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 34", tags:["Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 35", tags:["Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 36", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 37", tags:["Wicomico County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 38", tags:["Wicomico County 2026 elections","Worcester County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 39", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 40", tags:["Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 41", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 42", tags:["Baltimore County 2026 elections","Carroll County 2026 elections","Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 43", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 44", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 45", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 46", tags:["Anne Arundel County 2026 elections","Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"State Senate District 47", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  // GENERAL ASSEMBLY: House of Delegates
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 1A",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 1B",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 1C",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 2A",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 2B",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 3",   tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 4",   tags:["Carroll County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 5",   tags:["Carroll County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 6",   tags:["Baltimore County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 7A",  tags:["Baltimore County 2026 elections","Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 7B",  tags:["Baltimore County 2026 elections","Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 8",   tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 9A",  tags:["Carroll County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 9B",  tags:["Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 10",  tags:["Baltimore County 2026 elections","Carroll County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 11A", tags:["Baltimore County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 11B", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 12A", tags:["Anne Arundel County 2026 elections","Baltimore County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 12B", tags:["Anne Arundel County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 13",  tags:["Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 14",  tags:["Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 15",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 16",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 17",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 18",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 19",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 20",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 21",  tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 22",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 23",  tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 24",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 25",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 26",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 27A", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 27B", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 27C", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 28",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 29A", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 29B", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 29C", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 30A", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 30B", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 31",  tags:["Anne Arundel County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 32",  tags:["Anne Arundel County 2026 elections","Howard County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 33A", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 33B", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 33C", tags:["Anne Arundel County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 34A", tags:["Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 34B", tags:["Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 35A", tags:["Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 35B", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 36",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 37A", tags:["Wicomico County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 37B", tags:["Wicomico County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 38A", tags:["Wicomico County 2026 elections","Worcester County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 38B", tags:["Wicomico County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 38C", tags:["Wicomico County 2026 elections","Worcester County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 39",  tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 40",  tags:["Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 41",  tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 42A", tags:["Baltimore County 2026 elections","Carroll County 2026 elections","Harford County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 42B", tags:["Baltimore County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 42C", tags:["Baltimore County 2026 elections","Carroll County 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 43A", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 43B", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 44A", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 44B", tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 45",  tags:["Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 46",  tags:["Anne Arundel County 2026 elections","Baltimore County 2026 elections","Baltimore City 2026 elections","Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 47A", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+  { level:"General Assembly", ballot:"districts", jurisdiction:"Maryland", office:"House of Delegates District 47B", tags:["Maryland General Assembly 2026 races","Maryland 2026 elections"] },
+].map(r => ({
+  ...r,
+  id: `${r.jurisdiction}||${r.office}`,
+  og: officeGroup(r),
+  displayName: (r.level === 'General Assembly' || r.level === 'federal')
+    ? r.office
+    : `${r.jurisdiction} — ${r.office}`,
+}));
+
+// ── state ─────────────────────────────────────────────────────────────────────
+let af       = { level: new Set(), ballot: new Set(), jurisdiction: new Set(), og: new Set() };
+let favs     = JSON.parse(localStorage.getItem('elTagFavs') || '[]');
+let clipIds  = JSON.parse(localStorage.getItem('elTagClip') || '[]');
+let showFavs = false, searchQ = '', clipOpen = true;
+
+// ── filter logic ──────────────────────────────────────────────────────────────
+function matches(r, skip) {
+  for (const [dim, s] of Object.entries(af)) {
+    if (dim === skip || !s.size) continue;
+    if (!s.has(dim === 'og' ? r.og : r[dim])) return false;
+  }
+  return true;
+}
+function available(dim) {
+  const sub = races.filter(r => matches(r, dim));
+  if (dim === 'jurisdiction') return new Set(sub.map(r => r.jurisdiction).filter(j => j && !j.includes(',')));
+  if (dim === 'og')           return new Set(sub.map(r => r.og).filter(Boolean));
+  return new Set(sub.map(r => r[dim]).filter(Boolean));
+}
+
+// ── build filter buttons ──────────────────────────────────────────────────────
+function buildFilters() {
+  const ogOrder = ['U.S. Congress','State Senate','House of Delegates'];
+  const configs = [
+    { id:'fl-level',        dim:'level',       vals:[...new Set(races.map(r=>r.level).filter(Boolean))].sort() },
+    { id:'fl-ballot',       dim:'ballot',      vals:[...new Set(races.map(r=>r.ballot).filter(Boolean))].sort() },
+    { id:'fl-jurisdiction', dim:'jurisdiction',vals:[...new Set(races.filter(r=>r.jurisdiction&&!r.jurisdiction.includes(',')).map(r=>r.jurisdiction))].sort() },
+    { id:'fl-office',       dim:'og',          vals:[...new Set(races.map(r=>r.og).filter(Boolean))].sort((a,b)=>{
+        const ai=ogOrder.indexOf(a), bi=ogOrder.indexOf(b);
+        if(ai>=0&&bi>=0) return ai-bi; if(ai>=0) return -1; if(bi>=0) return 1; return a.localeCompare(b);
+      })
+    },
+  ];
+  configs.forEach(({id,dim,vals}) => {
+    const wrap = document.getElementById(id);
+    vals.forEach(v => {
+      const b = document.createElement('button');
+      b.className = 'fbtn'; b.textContent = v;
+      b.dataset.dim = dim; b.dataset.val = v;
+      b.onclick = () => { af[dim].has(v) ? af[dim].delete(v) : af[dim].add(v); refresh(); };
+      wrap.appendChild(b);
+    });
+  });
+}
+
+function updateFilterBtns() {
+  document.querySelectorAll('.fbtn[data-dim]').forEach(b => {
+    const {dim, val} = b.dataset;
+    const on = af[dim].has(val);
+    b.classList.toggle('on', on);
+    b.classList.toggle('dim', !on && !available(dim).has(val));
+  });
+}
+
+// ── race list ─────────────────────────────────────────────────────────────────
+function getFiltered() {
+  const q = searchQ.toLowerCase();
+  return races.filter(r => {
+    if (showFavs && !favs.includes(r.id)) return false;
+    if (!matches(r)) return false;
+    if (q && !r.displayName.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+
+function renderList() {
+  const filtered = getFiltered();
+  document.getElementById('list-ct').textContent = `${filtered.length} race${filtered.length!==1?'s':''}`;
+  const c = document.getElementById('race-list');
+  c.innerHTML = '';
+  if (!filtered.length) { c.innerHTML = '<div class="empty">No races match the current filters.</div>'; return; }
+  filtered.forEach(race => {
+    const inClip = clipIds.includes(race.id);
+    const isFav  = favs.includes(race.id);
+    const div = document.createElement('div');
+    div.className = 'ri' + (inClip ? ' clipped' : '');
+    div.innerHTML = `
+      <span class="ri-name">${race.displayName}</span>
+      <span class="ri-meta">${race.level}${race.ballot?' · '+race.ballot:''}</span>
+      <button class="add-btn${inClip?' added':''}">${inClip?'✓ Added':'+ Add'}</button>
+      <button class="qc-btn">Quick Copy</button>
+      <button class="star${isFav?' on':''}">★</button>
+    `;
+    div.querySelector('.add-btn').onclick = () => addToClip(race.id);
+    div.querySelector('.qc-btn').onclick  = () => quickCopy(race, div.querySelector('.qc-btn'));
+    div.querySelector('.star').onclick    = () => toggleFav(race.id);
+    c.appendChild(div);
+  });
+}
+
+function refresh() { updateFilterBtns(); renderList(); }
+
+// ── clipboard ─────────────────────────────────────────────────────────────────
+function addToClip(id) {
+  const i = clipIds.indexOf(id);
+  i === -1 ? clipIds.push(id) : clipIds.splice(i, 1);
+  localStorage.setItem('elTagClip', JSON.stringify(clipIds));
+  renderList();
+  renderClipboard();
+}
+
+function getClipTags() {
+  const seen = new Set(), out = [];
+  clipIds.forEach(id => {
+    const r = races.find(x => x.id === id);
+    if (r) r.tags.forEach(t => { if (!seen.has(t)) { seen.add(t); out.push(t); } });
+  });
+  return out;
+}
+
+function renderClipboard() {
+  const has = clipIds.length > 0;
+  const badge = document.getElementById('clip-badge');
+  badge.textContent = clipIds.length;
+  badge.className = 'clip-badge' + (has ? ' has' : '');
+
+  document.getElementById('clip-empty').style.display = has ? 'none' : '';
+
+  const raceDiv = document.getElementById('clip-races');
+  raceDiv.innerHTML = '';
+  if (has) {
+    clipIds.forEach(id => {
+      const r = races.find(x => x.id === id);
+      if (!r) return;
+      const row = document.createElement('div');
+      row.className = 'clip-race-row';
+      row.innerHTML = `<span class="clip-race-name">${r.displayName}</span><button class="clip-rm" title="Remove">×</button>`;
+      row.querySelector('.clip-rm').onclick = () => addToClip(id);
+      raceDiv.appendChild(row);
+    });
+  }
+
+  const tagsSection = document.getElementById('clip-tags-section');
+  const emptyActions = document.getElementById('clip-tags-empty-actions');
+  if (has) {
+    tagsSection.style.display = 'block';
+    emptyActions.style.display = 'none';
+    document.getElementById('clip-tags-box').textContent = getClipTags().join(', ');
+    document.getElementById('clip-tags-box').classList.remove('ok');
+  } else {
+    tagsSection.style.display = 'none';
+    emptyActions.style.display = 'block';
+  }
+
+  updateBodyPad();
+}
+
+function clearClipboard() {
+  clipIds = [];
+  localStorage.setItem('elTagClip', JSON.stringify(clipIds));
+  renderList();
+  renderClipboard();
+}
+
+function copyTags() {
+  const tags = getClipTags();
+  if (!tags.length) return;
+  navigator.clipboard.writeText(tags.join(', ')).then(() => {
+    const btn = document.getElementById('btn-copy-all');
+    const box = document.getElementById('clip-tags-box');
+    btn.textContent = '✓ Copied!'; btn.classList.add('ok');
+    box.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copy all tags'; btn.classList.remove('ok'); box.classList.remove('ok'); }, 2000);
+  });
+}
+
+function quickCopy(race, btn) {
+  if (!race.tags.length) return;
+  navigator.clipboard.writeText(race.tags.join(', ')).then(() => {
+    btn.textContent = '✓ Copied!'; btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Quick Copy'; btn.classList.remove('ok'); }, 1500);
+  });
+}
+
+function togglePanel() {
+  clipOpen = !clipOpen;
+  document.getElementById('clip-body').style.display = clipOpen ? 'block' : 'none';
+  document.getElementById('clip-caret').textContent = clipOpen ? '▼ collapse' : '▲ expand';
+  updateBodyPad();
+}
+
+function updateBodyPad() {
+  document.body.style.paddingBottom = (document.getElementById('clip-panel').offsetHeight + 8) + 'px';
+}
+
+// ── favorites ─────────────────────────────────────────────────────────────────
+function toggleFav(id) {
+  const i = favs.indexOf(id);
+  i === -1 ? favs.push(id) : favs.splice(i, 1);
+  localStorage.setItem('elTagFavs', JSON.stringify(favs));
+  renderList();
+}
+function toggleFavFilter() {
+  showFavs = !showFavs;
+  document.getElementById('fav-btn').classList.toggle('on', showFavs);
+  refresh();
+}
+function clearAll() {
+  Object.values(af).forEach(s => s.clear());
+  showFavs = false; searchQ = '';
+  document.getElementById('search-input').value = '';
+  document.getElementById('fav-btn').classList.remove('on');
+  refresh();
+}
+
+// ── autocomplete ──────────────────────────────────────────────────────────────
+const inp = document.getElementById('search-input');
+const acEl = document.getElementById('ac-list');
+let acIdx = -1;
+
+inp.addEventListener('input', () => { searchQ = inp.value.trim(); acIdx = -1; showAC(); refresh(); });
+inp.addEventListener('keydown', e => {
+  const items = acEl.querySelectorAll('.ac-item');
+  if (e.key==='ArrowDown') { acIdx=Math.min(acIdx+1,items.length-1); hlAC(items); e.preventDefault(); }
+  else if (e.key==='ArrowUp') { acIdx=Math.max(acIdx-1,-1); hlAC(items); e.preventDefault(); }
+  else if (e.key==='Enter'&&acIdx>=0) items[acIdx].click();
+  else if (e.key==='Escape') clearAC();
+});
+function hlAC(items) { items.forEach((it,i)=>it.classList.toggle('active',i===acIdx)); }
+function showAC() {
+  clearAC(); if (!searchQ) return;
+  const q = searchQ.toLowerCase();
+  races.filter(r=>r.displayName.toLowerCase().includes(q)).slice(0,10).forEach(race => {
+    const li = document.createElement('li');
+    li.className = 'ac-item'; li.textContent = race.displayName;
+    li.onclick = () => { inp.value = race.displayName; searchQ = race.displayName; clearAC(); refresh(); };
+    acEl.appendChild(li);
+  });
+}
+function clearAC() { acEl.innerHTML=''; acIdx=-1; }
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) clearAC(); });
+
+// ── boot ──────────────────────────────────────────────────────────────────────
+buildFilters();
+refresh();
+renderClipboard();
+window.addEventListener('resize', updateBodyPad);
+</script>
+</body>
+</html>
