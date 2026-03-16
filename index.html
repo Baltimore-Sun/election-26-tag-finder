@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex">
+<meta name="robots" content="noindex, nofollow">
 <title>Election Tag Finder</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -363,7 +363,7 @@ body {
 <!-- Page title -->
 <div class="page-wrap">
   <h1 class="page-title">🗳️ Election Tag Finder</h1>
-  <p class="page-desc">Search or filter for races.<br> &#x1F449; Use "Quick Copy" if your story is about a single race.<br>&#x1F449 If your story concerns multiple races, "Add" races to clipboard then "Copy all tags" from Tag Clipboard.</p>
+  <p class="page-desc">Search or filter for races.<br>👉 Use <strong>Quick Copy</strong> if your story is about a single race.<br>👉 If your story concerns multiple races, <strong>Add</strong> races to clipboard then <strong>Copy all tags</strong> from Tag Clipboard.</p>
 </div>
 
 <div class="content">
@@ -664,7 +664,7 @@ const races = [
 let af       = { level: new Set(), ballot: new Set(), jurisdiction: new Set(), og: new Set() };
 let favs     = JSON.parse(localStorage.getItem('elTagFavs') || '[]');
 let clipIds  = JSON.parse(localStorage.getItem('elTagClip') || '[]');
-let showFavs = false, searchQ = '', clipOpen = true;
+let showFavs = false, searchQ = '', clipOpen = false;
 
 // ── filter logic ──────────────────────────────────────────────────────────────
 function matches(r, skip) {
