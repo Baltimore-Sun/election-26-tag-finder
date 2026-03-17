@@ -177,15 +177,6 @@ body {
 .ri.clipped { background: #edfaef; }
 .ri.clipped:hover { background: #d9f5dd; }
 .ri-name { flex: 1; font-size: 13px; font-weight: 400; color: #1d2327; }
-.ri-meta {
-  font-size: 11px;
-  color: #787c82;
-  white-space: nowrap;
-  background: #f0f0f1;
-  border: 1px solid #dcdcde;
-  border-radius: 2px;
-  padding: 1px 6px;
-}
 .add-btn {
   padding: 3px 10px;
   font-size: 12px;
@@ -720,7 +711,6 @@ function renderList() {
     div.className = 'ri' + (inClip ? ' clipped' : '');
     div.innerHTML = `
       <span class="ri-name">${race.displayName}</span>
-      <span class="ri-meta">${race.level}${race.ballot?' · '+race.ballot:''}</span>
       <button class="add-btn${inClip?' added':''}">${inClip?'✓ Added':'+ Add'}</button>
       <button class="qc-btn">Quick Copy</button>
       <button class="star${isFav?' on':''}">★</button>
